@@ -2,7 +2,7 @@
 var SupportEmoji = false,
 	UA = navigator.userAgent;
 
-if (UA.match(/Mac\s+OS/i) && !UA.match(/chrome/i)) {
+if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Gecko)/i)) {
 	SupportEmoji = true;
 }
 
@@ -62,9 +62,9 @@ var Emoji = {
 		}
 
 		fontSize += 5;
-		
+
 		text = text.replace(Emoji.reg, function(code) {
-			return '<img width=' + fontSize + ' class="emoji" src="emoji/' + Emoji._escapeToUtf32(code) + '.png">';
+			return '<img width=' + fontSize + ' height=' + fontSize + ' class="emoji" src="emoji/' + Emoji._escapeToUtf32(code) + '.png">';
 		});
 
 		if (isElement) {

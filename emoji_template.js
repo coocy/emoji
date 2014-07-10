@@ -2,9 +2,10 @@
 var SupportEmoji = false,
 	UA = navigator.userAgent;
 
-if (UA.match(/Mac\s+OS/i) && !UA.match(/chrome/i)) {
+if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Gecko)/i)) {
 	SupportEmoji = true;
 }
+
 
 var Emoji = {
 
