@@ -6,12 +6,9 @@ if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Gecko)/i)) {
 	SupportEmoji = true;
 }
 
-
 var Emoji = {
 
-	reg: /emoji_reg/,
-
-	data: ['emoji_data'],
+	reg: /emoji_reg/g,
 
 	emojiPath: 'emoji/',
 
@@ -53,11 +50,17 @@ var Emoji = {
 		return escaped.join('-');
 	},
 
-	trans: SupportEmoji ? function() {} : function(text, fontSize) {
-		var isElement, el;
+	emoji: SupportEmoji ? function() {} : function(text) {
+		setTimeout(function() {
+			Emoji.trans(text);
+		}, 0);
+	},
+
+	trans:  function(text) {
+		var isElement, el, fontSize;
 		if (text.nodeType) {
-			var el = text,
-				fontSize = (el.currentStyle || window.getComputedStyle(el, ''))['fontSize'];
+			el = text;
+			fontSize = (el.currentStyle || window.getComputedStyle(el, ''))['fontSize'];
 
 			fontSize = parseFloat(fontSize);
 			text = el.innerHTML;
@@ -82,7 +85,7 @@ var Emoji = {
 if (typeof $ !== 'undefined') {
 	$.fn.emoji = SupportEmoji ? function() {} :  function() {
 		this.each(function(index, element) {
-			Emoji.trans(element);
+			Emoji.emoji(element);
 		});
 	};
 }

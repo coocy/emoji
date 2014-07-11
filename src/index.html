@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8">
+	<title>Emoji Test</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+	<script type="text/javascript" src="emoji.js"></script>
+	<style type="text/css">
+		body{
+			font-family: Helvetica,Arial,sans-serif;
+			font-size: 1em;
+			line-height:1.5;
+			color: black;
+			background:#f5f5f5;
+			padding:1em;
+		}
+		h1{
+			margin:0;
+			padding:0 .2em .8em;
+			font-size:1.2em;
+		}
+		div{
+			border:1px solid #e5e5e5;
+			padding:10px;
+			border-radius:5px;
+			background:#fff;
+			margin-bottom: 10px;
+		}
+		#text2{
+			font-size: 1.5em;
+		}
+		.emoji{
+			vertical-align:middle;
+		}
+	</style>
+</head>
+<body>
+	<h1>Emoji count: {emoji_count}</h1>
+	<div id="text1">
+		Emoji Test 中文字 {emoji}
+	</div>
+
+	<div id="text2">
+		Emoji Test 中文字 {emoji}
+	</div>
+
+	<script type="text/javascript">
+		Emoji.trans(document.getElementById('text1'));
+		Emoji.trans(document.getElementById('text2'));
+	</script>
+</body>
+</html>
