@@ -1,59 +1,38 @@
 
-var SupportEmoji = false,
-	UA = navigator.userAgent;
-
-if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Firefox)/i)) {
-	SupportEmoji = true;
-}
-
 var Emoji = {
 
 	reg: /emoji_reg/g,
 
 	emojiPath: 'emoji/',
 
-	_convertStringToUnicodeCodePoints: function(str) {
-		var surrogate1st = 0,
-			unicodeCodes = [],
-			i = 0,
-			l = str.length;
+	emoji: function(text) {
 
-		for (; i < l; i++) {
-			var utf16Code = str.charCodeAt(i);
-			if (surrogate1st != 0) {
-				if (utf16Code >= 0xDC00 && utf16Code <= 0xDFFF) {
-					var surrogate2nd = utf16Code,
-						unicodeCode = (surrogate1st - 0xD800) * (1 << 10) + (1 << 16) + (surrogate2nd - 0xDC00);
-					unicodeCodes.push(unicodeCode);
-				}
-				surrogate1st = 0;
-			} else if (utf16Code >= 0xD800 && utf16Code <= 0xDBFF) {
-				surrogate1st = utf16Code;
-			} else {
-				unicodeCodes.push(utf16Code);
+		//在第一次调用的时候检查浏览器是否支持emoji符号
+		var supportEmoji = false,
+			UA = navigator.userAgent;
+
+		if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Firefox)/i)) {
+			supportEmoji = true;
+		}
+
+		//如果浏览器支持原生的emoji，无需转换，把转换方法置空
+		if (supportEmoji) {
+			Emoji.emoji = function() {};
+
+			//置空$().emoji()方法
+			if (typeof $ !== 'undefined') {
+				$.fn.emoji = function() {};
+				return false; //return false是为了终止$().each()循环
 			}
+		} else {
+			Emoji.emoji = function(text) {
+				setTimeout(function() {
+					Emoji.trans(text);
+				}, 0);
+			}
+
+			Emoji.emoji(text);
 		}
-		return unicodeCodes;
-	},
-
-	_escapeToUtf32: function(str) {
-		var escaped = [],
-			unicodeCodes = Emoji._convertStringToUnicodeCodePoints(str),
-			i = 0,
-			l = unicodeCodes.length,
-			hex;
-
-		for (; i < l; i++) {
-			hex = unicodeCodes[i].toString(16);
-			escaped.push('0000'.substr(hex.length) + hex);
-		}
-		return escaped.join('-');
-	},
-
-	emoji: SupportEmoji ? function() {} : function(text) {
-		setTimeout(function() {
-			Emoji.trans(text);
-		}, 0);
 	},
 
 	trans:  function(text) {
@@ -79,11 +58,50 @@ var Emoji = {
 			el.innerHTML = text;
 		}
 		return text;
+	},
+
+	//编码转换
+	_escapeToUtf32: function(str) {
+		var escaped = [],
+			unicodeCodes = Emoji._convertStringToUnicodeCodePoints(str),
+			i = 0,
+			l = unicodeCodes.length,
+			hex;
+
+		for (; i < l; i++) {
+			hex = unicodeCodes[i].toString(16);
+			escaped.push('0000'.substr(hex.length) + hex);
+		}
+		return escaped.join('-');
+	},
+
+	_convertStringToUnicodeCodePoints: function(str) {
+		var surrogate1st = 0,
+			unicodeCodes = [],
+			i = 0,
+			l = str.length;
+
+		for (; i < l; i++) {
+			var utf16Code = str.charCodeAt(i);
+			if (surrogate1st != 0) {
+				if (utf16Code >= 0xDC00 && utf16Code <= 0xDFFF) {
+					var surrogate2nd = utf16Code,
+						unicodeCode = (surrogate1st - 0xD800) * (1 << 10) + (1 << 16) + (surrogate2nd - 0xDC00);
+					unicodeCodes.push(unicodeCode);
+				}
+				surrogate1st = 0;
+			} else if (utf16Code >= 0xD800 && utf16Code <= 0xDBFF) {
+				surrogate1st = utf16Code;
+			} else {
+				unicodeCodes.push(utf16Code);
+			}
+		}
+		return unicodeCodes;
 	}
 };
 
 if (typeof $ !== 'undefined') {
-	$.fn.emoji = SupportEmoji ? function() {} :  function() {
+	$.fn.emoji = function() {
 		this.each(function(index, element) {
 			Emoji.emoji(element);
 		});
