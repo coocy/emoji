@@ -2,7 +2,7 @@
 var SupportEmoji = false,
 	UA = navigator.userAgent;
 
-if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Gecko)/i)) {
+if (UA.match(/Mac\s+OS/i) && !UA.match(/(Chrome|Firefox)/i)) {
 	SupportEmoji = true;
 }
 
@@ -69,7 +69,7 @@ var Emoji = {
 			fontSize = fontSize || 14;
 		}
 
-		fontSize += 5;
+		fontSize += 4;
 
 		text = text.replace(Emoji.reg, function(code) {
 			return '<img width=' + fontSize + ' class="emoji" src="' + Emoji.emojiPath + Emoji._escapeToUtf32(code) + '.png">';

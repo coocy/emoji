@@ -35,7 +35,7 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 		var emojiReg = '/' + resultEncoded.join('|') + '/';
 
 		//write js
-		fs.readFile('emoji_template.js', function(err, data) {
+		fs.readFile('emoji.js', function(err, data) {
 			if (err) {
 				console.log(err);
 			} else {
@@ -66,6 +66,6 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 				});
 			}
 		});
-		
+
 	}
 });

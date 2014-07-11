@@ -19,7 +19,7 @@
     <script type="text/javascript">
         //转换包含emoji文本内容的DOM对象
         var el = document.getElementById('text');
-        html = Emoji.trans(el);
+        html = Emoji.emoji(el);
     </script>
 </body>
 </html>
