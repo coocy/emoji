@@ -1,6 +1,24 @@
 
 
-var fs = require('fs');
+var fs = require('fs'),
+	child = require('child_process'),
+	path = require('path');
+
+deleteFolderRecursive = function(path) {
+	var files = [];
+	if (fs.existsSync(path)) {
+		files = fs.readdirSync(path);
+		files.forEach(function(file,index) {
+			var curPath = path + "/" + file;
+			if (fs.lstatSync(curPath).isDirectory()) {
+				deleteFolderRecursive(curPath);
+			} else {
+				fs.unlinkSync(curPath);
+			}
+		});
+		fs.rmdirSync(path);
+	}
+};
 
 // 'あい' => r'\u3042\u3044'
 function escapeToUtf16(str) {
@@ -13,6 +31,7 @@ function escapeToUtf16(str) {
 }
 
 fs.readFile('../gemoji/db/emoji.json', function(err, data) {
+
 	if (err) {
 		console.log(err);
 	} else {
@@ -67,5 +86,67 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 			}
 		});
 
+		//compress images
+		var rootPath = path.resolve('../');
+		var sourceDir = '../gemoji/images/emoji/unicode';
+		fs.readdir(sourceDir, function(err, files) {
+			if (err) {
+				console.log(err);
+			} else {
+				for (var i = 0, l = files.length; i < l; i++) {
+					var file = files[i];
+
+					var cmd = rootPath + '/bin/pngquant.exe -f -o ' + rootPath +'/emoji/' + file +
+						' --speed=1 --quality=35-90 -- ' + sourceDir + '/' + file;
+
+					child.exec(cmd, function (err, stdout, stderr) {
+						if (err) {
+							console.log(err);
+						} else {
+							console.log('Compress image ' + file + ' success');
+						}
+					});
+				};
+
+				var j = 8,
+					x = 0,
+					tempDir = '/_emoji/',
+					inDir, outDir;
+
+				if (!fs.existsSync(rootPath + tempDir)) {
+					fs.mkdirSync(rootPath + tempDir);
+				}
+
+				while(j--) {
+
+					if (0 === x) {
+						inDir = '/emoji/',
+						outDir = tempDir;
+						x = 1;
+					} else {
+						inDir = '/_emoji/',
+						outDir = tempDir;
+						x = 0;
+					}
+
+					for (var i = 0, l = files.length; i < l; i++) {
+						var file = files[i];
+
+						var cmd = rootPath + '/bin/pngquant.exe -f -o ' + rootPath + outDir  + file +
+							' --speed=1 --quality=50-90 -- ' + rootPath + inDir + file;
+
+						child.exec(cmd, function (err, stdout, stderr) {
+							if (err) {
+								console.log(err);
+							} else {
+								console.log('Compress image ' + file + ' success');
+							}
+						});
+					};
+				}
+
+				deleteFolderRecursive(rootPath + tempDir);
+			}
+		});
 	}
 });
