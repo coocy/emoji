@@ -2,6 +2,9 @@
 
 使用前端转换方式在不支持emoji表情符号的设备和浏览器中使用图片显示emoji表情符号，转换后的表情符号可以自适应文字大小。
 
+Demo:
+http://coocy.github.io/emoji
+
 ## 安装:
 
 拷贝`emoji.js`和`emoji`文件夹到你的项目中。
