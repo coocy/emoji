@@ -4,7 +4,15 @@ var fs = require('fs'),
 	child = require('child_process'),
 	path = require('path');
 
-deleteFolderRecursive = function(path) {
+var rootPath = path.resolve('../'),
+	emojiSourceDir = rootPath + '/gemoji/images/emoji/unicode/',
+	emojiDestDir = rootPath + '/emoji/',
+	emojiDestDir2X = rootPath + '/emoji/2x/';
+	emojiResizeDir = rootPath + '/_resize/',
+	maxEmojiSize = 20; // Max size of emoji images
+
+
+var deleteFolderRecursive = function(path) {
 	var files = [];
 	if (fs.existsSync(path)) {
 		files = fs.readdirSync(path);
@@ -21,16 +29,95 @@ deleteFolderRecursive = function(path) {
 };
 
 // 'あい' => r'\u3042\u3044'
-function escapeToUtf16(str) {
+var escapeToUtf16 = function(str) {
 	var escaped = '';
 	for (var i = 0, l = str.length; i < l; i++) {
 		var hex = str.charCodeAt(i).toString(16);
 		escaped += "\\u" + '0000'.substr(hex.length) + hex;
 	}
 	return escaped;
-}
+};
 
-fs.readFile('../gemoji/db/emoji.json', function(err, data) {
+var resizeImages = function(sourceDir, destDir, size, callback) {
+
+	fs.readdir(sourceDir, function(err, files) {
+		if (err) {
+			console.log(err);
+		} else {
+
+			var fileCount = files.length,
+				compressedCount = 0,
+				compressSuccessCount = 0;
+
+			for (var i = 0; i < fileCount; i++) {
+				var file = files[i],
+					cmd = 'convert "' + sourceDir + file + '" -resize ' + size + 'x' + size + ' "' +  destDir + file + '"';
+
+				child.exec(cmd, {
+					env: process.env
+				}, function (err, stdout, stderr) {
+					compressedCount++;
+					if (err) {
+						console.log(err);
+					} else {
+						compressSuccessCount++;
+					}
+
+					// Run callback function after all images are resized
+					if (compressedCount === fileCount) {
+						console.log('Resized ' + compressedCount + ' images with ' + compressSuccessCount + ' success');
+						if (callback) {
+							callback();
+						}
+					}
+				}.bind(file));
+			};
+		}
+	});
+};
+
+// Compress images
+var compressImages = function(sourceDir, destDir, callback) {
+
+	fs.readdir(sourceDir, function(err, files) {
+		if (err) {
+			console.log(err);
+		} else {
+
+			var fileCount = files.length,
+				compressedCount = 0,
+				compressSuccessCount = 0;
+
+			for (var i = 0; i < fileCount; i++) {
+				var file = files[i],
+					cmd = rootPath + '/bin/pngquant.exe -f -o ' + destDir + file +
+						' --quality=65 -- ' + sourceDir + '/' + file;
+
+				child.exec(cmd, {
+					env: process.env
+				}, function (err, stdout, stderr) {
+					compressedCount++;
+					if (err) {
+						console.log(err);
+					} else {
+						compressSuccessCount++;
+					}
+
+					// Run callback function after all images are compressed
+					if (compressedCount === fileCount) {
+						console.log('Compressed ' + compressedCount + ' images with ' + compressSuccessCount + ' success');
+						if (callback) {
+							callback();
+						}
+					}
+				}.bind(file));
+			};
+		}
+	});
+};
+
+// Read emoji data
+fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 
 	if (err) {
 		console.log(err);
@@ -53,12 +140,12 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 		var emojiTexts = result.join(' ');
 		var emojiReg = '/' + resultEncoded.join('|') + '/';
 
-		//write js
+		// Write js
 		fs.readFile('emoji.js', function(err, data) {
 			if (err) {
 				console.log(err);
 			} else {
-				var jsContents = data.toString().replace('/emoji_reg/', emojiReg);
+				var jsContents = data.toString().replace('/emoji_reg/', emojiReg).replace('\'@maxSize\'', maxEmojiSize);
 				fs.writeFile('../emoji.js', jsContents, function(err) {
 					if (err) {
 						console.log(err);
@@ -68,7 +155,7 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 			}
 		});
 
-		//write test html
+		// Write test html
 		fs.readFile('index.html', function(err, data) {
 			if (err) {
 				console.log(err);
@@ -86,67 +173,33 @@ fs.readFile('../gemoji/db/emoji.json', function(err, data) {
 			}
 		});
 
-		//compress images
-		var rootPath = path.resolve('../');
-		var sourceDir = '../gemoji/images/emoji/unicode';
-		fs.readdir(sourceDir, function(err, files) {
-			if (err) {
-				console.log(err);
-			} else {
-				for (var i = 0, l = files.length; i < l; i++) {
-					var file = files[i];
+		// Compress images
+		if (fs.existsSync(emojiDestDir)) {
+			deleteFolderRecursive(emojiDestDir);
+		}
+		fs.mkdirSync(emojiDestDir);
+		fs.mkdirSync(emojiDestDir2X);
 
-					var cmd = rootPath + '/bin/pngquant.exe -f -o ' + rootPath +'/emoji/' + file +
-						' --speed=1 --quality=35-90 -- ' + sourceDir + '/' + file;
+		if (fs.existsSync(emojiResizeDir)) {
+			deleteFolderRecursive(emojiResizeDir);
+		}
+		fs.mkdirSync(emojiResizeDir);
 
-					child.exec(cmd, function (err, stdout, stderr) {
-						if (err) {
-							console.log(err);
-						} else {
-							console.log('Compress image ' + file + ' success');
-						}
+		// Create the 1x size images
+		resizeImages(emojiSourceDir, emojiResizeDir, maxSize, function() {
+
+			// Compress the 1x size images
+			compressImages(emojiResizeDir, emojiDestDir, function() {
+
+				// Create the 2x size images
+				resizeImages(emojiSourceDir, emojiResizeDir, maxSize * 2, function() {
+
+					// Compress the 2x size images
+					compressImages(emojiResizeDir, emojiDestDir2X, function() {
+						deleteFolderRecursive(emojiResizeDir);
 					});
-				};
-
-				var j = 8,
-					x = 0,
-					tempDir = '/_emoji/',
-					inDir, outDir;
-
-				if (!fs.existsSync(rootPath + tempDir)) {
-					fs.mkdirSync(rootPath + tempDir);
-				}
-
-				while(j--) {
-
-					if (0 === x) {
-						inDir = '/emoji/',
-						outDir = tempDir;
-						x = 1;
-					} else {
-						inDir = '/_emoji/',
-						outDir = tempDir;
-						x = 0;
-					}
-
-					for (var i = 0, l = files.length; i < l; i++) {
-						var file = files[i];
-
-						var cmd = rootPath + '/bin/pngquant.exe -f -o ' + rootPath + outDir  + file +
-							' --speed=1 --quality=50-90 -- ' + rootPath + inDir + file;
-
-						child.exec(cmd, function (err, stdout, stderr) {
-							if (err) {
-								console.log(err);
-							} else {
-								console.log('Compress image ' + file + ' success');
-							}
-						});
-					};
-				}
-
-				deleteFolderRecursive(rootPath + tempDir);
-			}
+				});
+			});
 		});
 	}
 });

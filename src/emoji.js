@@ -5,6 +5,9 @@ var Emoji = {
 
 	emojiPath: 'emoji/',
 
+	//表情图片的最大尺寸
+	maxSize: '@maxSize',
+
 	emoji: function(text) {
 
 		//在第一次调用的时候检查浏览器是否支持emoji符号
@@ -25,6 +28,13 @@ var Emoji = {
 				return false; //return false是为了终止$().each()循环
 			}
 		} else {
+
+			//判断屏幕分辨率，如果是高清屏的话使用稍大尺寸的表情图片
+			var pixelRatio = parseFloat(window.devicePixelRatio) || 1;
+			if (pixelRatio > 1.2) {
+				Emoji.emojiPath += '2x/';
+			}
+
 			Emoji.emoji = function(text) {
 				setTimeout(function() {
 					Emoji.trans(text);
@@ -49,6 +59,7 @@ var Emoji = {
 		}
 
 		fontSize += 4;
+		fontSize = Math.min(fontSize, Emoji.maxSize);
 
 		text = text.replace(Emoji.reg, function(code) {
 			return '<img width=' + fontSize + ' class="emoji" src="' + Emoji.emojiPath + Emoji._escapeToUtf32(code) + '.png">';
