@@ -51,6 +51,15 @@ var Emoji = {
 			el = text;
 			fontSize = (el.currentStyle || window.getComputedStyle(el, ''))['fontSize'];
 
+			//IE浏览器下如果css中的font-size单位不是象素的话，需要转换一下
+			if (!/px$/i.test(fontSize)) {
+				var left = el.style.left;
+					el.style.left = fontSize;
+
+				fontSize = el.style.pixelLeft;
+				el.style.left = left;
+			}
+
 			fontSize = parseFloat(fontSize);
 			text = el.innerHTML;
 			isElement = true;
@@ -62,7 +71,7 @@ var Emoji = {
 		fontSize = Math.min(fontSize, Emoji.maxSize);
 
 		text = text.replace(Emoji.reg, function(code) {
-			return '<img width=' + fontSize + ' class="emoji" src="' + Emoji.emojiPath + Emoji._escapeToUtf32(code) + '.png">';
+			return '<img width=' + fontSize + ' class="emoji" style="vertical-align:middle" src="' + Emoji.emojiPath + Emoji._escapeToUtf32(code) + '.png">';
 		});
 
 		if (isElement) {
