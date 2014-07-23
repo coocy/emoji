@@ -54,7 +54,7 @@ var Emoji = {
 			//IE浏览器下如果css中的font-size单位不是象素的话，需要转换一下
 			if (!/px$/i.test(fontSize)) {
 				var left = el.style.left;
-					el.style.left = fontSize;
+					el.style.left = '1em';
 
 				fontSize = el.style.pixelLeft;
 				el.style.left = left;
