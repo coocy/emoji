@@ -1,16 +1,16 @@
-
+#!/usr/bin/env node
 
 var fs = require('fs'),
 	child = require('child_process'),
 	path = require('path');
 
-var rootPath = path.resolve('../'),
-	emojiSourceDir = rootPath + '/gemoji/images/emoji/unicode/',
+var fileName = global.process.mainModule.filename,
+	rootPath = path.resolve(path.dirname(fileName) + '/../'),
+	emojiSourceDir = rootPath + '/emoji-data/img-apple-160/',
 	emojiDestDir = rootPath + '/emoji/',
 	emojiDestDir2X = rootPath + '/emoji/2x/';
 	emojiResizeDir = rootPath + '/_resize/',
 	maxEmojiSize = 20; // Max size of emoji images
-
 
 var deleteFolderRecursive = function(path) {
 	var files = [];
@@ -116,8 +116,26 @@ var compressImages = function(sourceDir, destDir, callback) {
 	});
 };
 
+function unicode(str){
+    str = str.replace(/\ufe0f|\u200d/gm, ''); // strips unicode variation selector and zero-width joiner
+    var i = 0, c = 0, p = 0, r = [];
+    while (i < str.length){
+        c = str.charCodeAt(i++);
+        if (p){
+            r.push((65536+(p-55296<<10)+(c-56320)).toString(16));
+            p = 0;
+        } else if (55296 <= c && c <= 56319){
+            p = c;
+        } else {
+            r.push(c.toString(16));
+        }
+    }
+    return r.join('-');
+}
+//console.log("\u{1f004}");return;
+
 // Read emoji data
-fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
+fs.readFile(rootPath + '/emoji-data/emoji.json', function(err, data) {
 
 	if (err) {
 		console.log(err);
@@ -129,10 +147,18 @@ fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 
 		for (var i = 0, l = emojiData.length; i < l; i++) {
 			var item = emojiData[i];
-			if ('emoji' in item) {
-				var emoji = item['emoji'];
+			if (item['has_img_apple']) {
+				var unicode = item['unified'].split('-').map(function(char) {
+					return "\\u" + char.toLocaleLowerCase();
+				}).join('');
+				resultEncoded.push(unicode);
+
+				var emoji = item['unified'].split('-').map(function(char) {
+					return '\\u{' + char.toLocaleLowerCase() + '}';
+				}).join('');
+
+				eval('var emoji="' + emoji + '"');
 				result.push(emoji);
-				resultEncoded.push(escapeToUtf16(emoji));
 				emojiCount++;
 			}
 		};
@@ -141,12 +167,12 @@ fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 		var emojiReg = '/' + resultEncoded.join('|') + '/';
 
 		// Write js
-		fs.readFile('emoji.js', function(err, data) {
+		fs.readFile(rootPath + '/src/emoji.js', function(err, data) {
 			if (err) {
 				console.log(err);
 			} else {
 				var jsContents = data.toString().replace('/emoji_reg/', emojiReg).replace('\'@maxSize\'', maxEmojiSize);
-				fs.writeFile('../emoji.js', jsContents, function(err) {
+				fs.writeFile(rootPath + '/emoji.js', jsContents, function(err) {
 					if (err) {
 						console.log(err);
 					}
@@ -156,7 +182,7 @@ fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 		});
 
 		// Write test html
-		fs.readFile('index.html', function(err, data) {
+		fs.readFile(rootPath + '/src/index.html', function(err, data) {
 			if (err) {
 				console.log(err);
 			} else {
@@ -164,7 +190,7 @@ fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 					.replace(/\{emoji\}/g, emojiTexts)
 					.replace(/\{emoji_count\}/g, emojiCount);
 
-				fs.writeFile('../index.html', htmlContents, function(err) {
+				fs.writeFile(rootPath + '/index.html', htmlContents, function(err) {
 					if (err) {
 						console.log(err);
 					}
@@ -186,13 +212,13 @@ fs.readFile(rootPath + '/gemoji/db/emoji.json', function(err, data) {
 		fs.mkdirSync(emojiResizeDir);
 
 		// Create the 1x size images
-		resizeImages(emojiSourceDir, emojiResizeDir, maxSize, function() {
+		resizeImages(emojiSourceDir, emojiResizeDir, maxEmojiSize, function() {
 
 			// Compress the 1x size images
 			compressImages(emojiResizeDir, emojiDestDir, function() {
 
 				// Create the 2x size images
-				resizeImages(emojiSourceDir, emojiResizeDir, maxSize * 2, function() {
+				resizeImages(emojiSourceDir, emojiResizeDir, maxEmojiSize * 2, function() {
 
 					// Compress the 2x size images
 					compressImages(emojiResizeDir, emojiDestDir2X, function() {
