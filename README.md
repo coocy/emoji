@@ -64,5 +64,5 @@ node src/output.js
 参考了`php-emoji`项目:
 https://github.com/iamcal/php-emoji
 
-emoji字典和图片来自`gemoji`项目:
-https://github.com/github/gemoji
+emoji字典和图片来自`emoji-data`项目:
+https://github.com/iamcal/emoji-data
