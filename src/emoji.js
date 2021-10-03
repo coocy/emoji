@@ -121,7 +121,7 @@ var Emoji = {
 };
 
 if (typeof $ !== 'undefined') {
-	$.fn.emoji = function() {
+	$.fn && $.fn.emoji = function() {
 		this.each(function(index, element) {
 			Emoji.emoji(element);
 		});
